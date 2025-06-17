@@ -1,0 +1,198 @@
+import java.util.*;
+
+class Linkedlist2 {
+    static Scanner in = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        number();
+    }
+
+    public static void number() {
+        String expression = "";
+
+        while (true) {
+            System.out.println("Enter an arithmetic expression (with +, -, *, / and parentheses):");
+            expression += in.nextLine().replaceAll(" ", "");
+
+            int openCount = 0, closeCount = 0;
+            for (char ch : expression.toCharArray()) {
+                if (ch == '(') openCount++;
+                else if (ch == ')') closeCount++;
+            }
+
+            if (openCount == closeCount) break;
+
+            if (openCount > closeCount) {
+                System.out.println("Unmatched open parenthesis '(' found.");
+                System.out.println("Options: 1: Enter more characters, 2: Auto-close with ')'");
+                int choice = in.nextInt();
+                in.nextLine();
+                if (choice == 2) {
+                    int toClose = openCount - closeCount;
+                    for (int i = 0; i < toClose; i++) expression += ")";
+                    break;
+                }
+            } else {
+                System.out.println("Too many closing parentheses ')'. Please re-enter the expression.");
+                expression = "";
+            }
+        }
+
+        processOptions(expression);
+        repeat();
+    }
+
+    public static void processOptions(String expr) {
+        while (true) {
+            System.out.println("\nChoose an option:");
+            System.out.println("1. Evaluate Expression");
+            System.out.println("2. Display All Numbers");
+            System.out.println("3. Display Even Numbers");
+            System.out.println("4. Display Odd Numbers");
+            System.out.println("5. Display Sorted Numbers");
+            System.out.println("6. Exit");
+
+            int option = in.nextInt();
+            in.nextLine();
+
+            List<Integer> numbers = extractIntegers(expr);
+
+            switch (option) {
+                case 1:
+                    try {
+                        double result = evaluate(expr);
+                        System.out.println("Result: " + result);
+                    } catch (Exception e) {
+                        System.out.println("Invalid expression: " + e.getMessage());
+                    }
+                    break;
+                case 2:
+                    System.out.println("Numbers: " + numbers);
+                    break;
+                case 3:
+                    System.out.println("Even Numbers: " + numbers.stream().filter(n -> n % 2 == 0).toList());
+                    break;
+                case 4:
+                    System.out.println("Odd Numbers: " + numbers.stream().filter(n -> n % 2 != 0).toList());
+                    break;
+                case 5:
+                    List<Integer> sorted = new ArrayList<>(numbers);
+                    Collections.sort(sorted);
+                    System.out.println("Sorted Numbers: " + sorted);
+                    break;
+                case 6:
+                    return;
+                default:
+                    System.out.println("Invalid choice.");
+            }
+        }
+    }
+
+    public static List<Integer> extractIntegers(String expr) {
+        List<Integer> numbers = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < expr.length(); i++) {
+            char ch = expr.charAt(i);
+            if (Character.isDigit(ch) || (ch == '-' && (i == 0 || !Character.isDigit(expr.charAt(i - 1))))) {
+                sb.setLength(0);
+                sb.append(ch);
+                i++;
+                while (i < expr.length() && Character.isDigit(expr.charAt(i))) {
+                    sb.append(expr.charAt(i));
+                    i++;
+                }
+                i--;
+                try {
+                    numbers.add(Integer.parseInt(sb.toString()));
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+        return numbers;
+    }
+
+    public static double evaluate(String expr) {
+        LinkedList<Double> values = new LinkedList<>();
+        LinkedList<Character> ops = new LinkedList<>();
+        int i = 0;
+
+        while (i < expr.length()) {
+            char ch = expr.charAt(i);
+
+            if (ch == '-' && (i == 0 || expr.charAt(i - 1) == '(' || isOperator(expr.charAt(i - 1)))) {
+                StringBuilder sb = new StringBuilder("-");
+                i++;
+                while (i < expr.length() && (Character.isDigit(expr.charAt(i)) || expr.charAt(i) == '.')) {
+                    sb.append(expr.charAt(i++));
+                }
+                values.addFirst(Double.parseDouble(sb.toString()));
+                continue;
+            }
+
+            if (Character.isDigit(ch) || ch == '.') {
+                StringBuilder sb = new StringBuilder();
+                while (i < expr.length() && (Character.isDigit(expr.charAt(i)) || expr.charAt(i) == '.')) {
+                    sb.append(expr.charAt(i++));
+                }
+                values.addFirst(Double.parseDouble(sb.toString()));
+                continue;
+            }
+
+            if (ch == '(') {
+                ops.addFirst(ch);
+            } else if (ch == ')') {
+                while (!ops.isEmpty() && ops.peekFirst() != '(') {
+                    values.addFirst(applyOp(ops.removeFirst(), values.removeFirst(), values.removeFirst()));
+                }
+                if (!ops.isEmpty() && ops.peekFirst() == '(') {
+                    ops.removeFirst();
+                } else {
+                    throw new IllegalArgumentException("Mismatched parentheses");
+                }
+            } else if (isOperator(ch)) {
+                while (!ops.isEmpty() && precedence(ch) <= precedence(ops.peekFirst())) {
+                    values.addFirst(applyOp(ops.removeFirst(), values.removeFirst(), values.removeFirst()));
+                }
+                ops.addFirst(ch);
+            }
+
+            i++;
+        }
+
+        while (!ops.isEmpty()) {
+            values.addFirst(applyOp(ops.removeFirst(), values.removeFirst(), values.removeFirst()));
+        }
+
+        return values.removeFirst();
+    }
+
+    public static boolean isOperator(char op) {
+        return op == '+' || op == '-' || op == '*' || op == '/';
+    }
+
+    public static int precedence(char op) {
+        if (op == '+' || op == '-') return 1;
+        if (op == '*' || op == '/') return 2;
+        return 0;
+    }
+
+    public static double applyOp(char op, double b, double a) {
+        switch (op) {
+            case '+': return a + b;
+            case '-': return a - b;
+            case '*': return a * b;
+            case '/':
+                if (b == 0) throw new ArithmeticException("Division by zero");
+                return a / b;
+        }
+        return 0;
+    }
+
+    public static void repeat() {
+        System.out.println("\nDo you want to enter another expression? 1: Yes  2: No");
+        int choice = in.nextInt();
+        in.nextLine();
+        if (choice == 1) number();
+        else System.out.println("Exit");
+    }
+}
