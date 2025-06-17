@@ -1,0 +1,203 @@
+import java.util.*;
+
+public class Arraylist {
+    public static void main(String[] args) {
+        Scanner in = new Scanner(System.in);
+        System.out.println("Enter expression:");
+        String input = in.nextLine().replaceAll(" ", "");
+
+        ArrayList<Character> expressionList = new ArrayList<>();
+        for (char c : input.toCharArray()) expressionList.add(c);
+
+        while (true) {
+            System.out.println("\nCurrent expression: " + listToString(expressionList));
+            System.out.println("1. Add character");
+            System.out.println("2. Delete character");
+            System.out.println("3. Replace character");
+            System.out.println("4. Parentheses operations");
+            System.out.println("5. Exit");
+            System.out.println("6. Evaluate expression");
+            System.out.print("Enter choice: ");
+            int choice = in.nextInt();
+
+            switch (choice) {
+                case 1:
+                    System.out.print("Enter character to add: ");
+                    char add = in.next().charAt(0);
+                    System.out.print("Enter position (0 to " + expressionList.size() + "): ");
+                    int posAdd = in.nextInt();
+                    if (posAdd >= 0 && posAdd <= expressionList.size())
+                        expressionList.add(posAdd, add);
+                    else
+                        System.out.println("Invalid position.");
+                    break;
+
+                case 2:
+                    System.out.print("Enter position to delete: ");
+                    int posDel = in.nextInt();
+                    if (posDel >= 0 && posDel < expressionList.size())
+                        expressionList.remove(posDel);
+                    else
+                        System.out.println("Invalid position.");
+                    break;
+
+                case 3:
+                    System.out.print("Enter position to replace: ");
+                    int posRep = in.nextInt();
+                    if (posRep >= 0 && posRep < expressionList.size()) {
+                        System.out.print("Enter new character: ");
+                        char newChar = in.next().charAt(0);
+                        expressionList.set(posRep, newChar);
+                    } else {
+                        System.out.println("Invalid position.");
+                    }
+                    break;
+
+                case 4:
+                    parenthesesMenu(expressionList, in);
+                    break;
+
+                case 5:
+                    return;
+
+                case 6:
+                    evaluateExpression(expressionList);
+                    break;
+
+                default:
+                    System.out.println("Invalid choice!");
+            }
+        }
+    }
+
+    static String listToString(ArrayList<Character> list) {
+        StringBuilder sb = new StringBuilder();
+        for (char c : list) sb.append(c);
+        return sb.toString();
+    }
+
+    static void parenthesesMenu(ArrayList<Character> list, Scanner in) {
+        System.out.println("\n--- Parentheses Menu ---");
+        System.out.println("1. Add a parenthesis manually");
+        System.out.println("2. Check parentheses balance");
+        System.out.print("Enter your choice: ");
+        int subChoice = in.nextInt();
+
+        switch (subChoice) {
+            case 1:
+                System.out.print("Enter parenthesis to add ('(' or ')'): ");
+                char paren = in.next().charAt(0);
+                if (paren != '(' && paren != ')') {
+                    System.out.println("Invalid parenthesis character.");
+                    return;
+                }
+                System.out.print("Enter position (0 to " + list.size() + "): ");
+                int position = in.nextInt();
+                if (position >= 0 && position <= list.size()) {
+                    list.add(position, paren);
+                    System.out.println("Parenthesis added.");
+                } else {
+                    System.out.println("Invalid position.");
+                }
+                break;
+
+            case 2:
+                checkParentheses(list);
+                break;
+
+            default:
+                System.out.println("Invalid option.");
+        }
+    }
+
+    static void checkParentheses(ArrayList<Character> list) {
+        int balance = 0;
+        for (char c : list) {
+            if (c == '(') balance++;
+            else if (c == ')') balance--;
+            if (balance < 0) {
+                System.out.println("Unmatched closing parenthesis detected!");
+                return;
+            }
+        }
+        if (balance == 0)
+            System.out.println("Parentheses are balanced.");
+        else
+            System.out.println("Unmatched opening parentheses! (" + balance + " more '(' than ')')");
+    }
+
+    static void evaluateExpression(ArrayList<Character> list) {
+        String expr = listToString(list);
+        try {
+            double result = new ExpressionParser().parse(expr);
+            System.out.println("Result: " + result);
+        } catch (Exception e) {
+            System.out.println("Invalid expression: " + e.getMessage());
+        }
+    }
+}
+
+// Simple expression parser (supports +, -, *, /, parentheses)
+class ExpressionParser {
+    private int pos = -1, ch;
+    private String input;
+
+    double parse(String str) {
+        input = str;
+        pos = -1;
+        nextChar();
+        double x = parseExpression();
+        if (pos < input.length()) throw new RuntimeException("Unexpected: " + (char) ch);
+        return x;
+    }
+
+    void nextChar() {
+        ch = (++pos < input.length()) ? input.charAt(pos) : -1;
+    }
+
+    boolean eat(int charToEat) {
+        while (ch == ' ') nextChar();
+        if (ch == charToEat) {
+            nextChar();
+            return true;
+        }
+        return false;
+    }
+
+    double parseExpression() {
+        double x = parseTerm();
+        while (true) {
+            if (eat('+')) x += parseTerm();
+            else if (eat('-')) x -= parseTerm();
+            else return x;
+        }
+    }
+
+    double parseTerm() {
+        double x = parseFactor();
+        while (true) {
+            if (eat('*')) x *= parseFactor();
+            else if (eat('/')) x /= parseFactor();
+            else return x;
+        }
+    }
+
+    double parseFactor() {
+        if (eat('+')) return parseFactor();
+        if (eat('-')) return -parseFactor();
+
+        double x;
+        int startPos = this.pos;
+        if (eat('(')) {
+            x = parseExpression();
+            if (!eat(')')) throw new RuntimeException("Missing ')'");
+        } else if ((ch >= '0' && ch <= '9') || ch == '.') {
+            while ((ch >= '0' && ch <= '9') || ch == '.') nextChar();
+            x = Double.parseDouble(input.substring(startPos, this.pos));
+        } else {
+            throw new RuntimeException("Unexpected: " + (char) ch);
+        }
+
+        return x;
+    }
+}
