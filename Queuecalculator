@@ -1,0 +1,246 @@
+import java.util.*;
+
+class Queuecalculator123 {
+    public static void main(String[] args) {
+        number();
+    }
+
+    public static void number() {
+        Scanner in = new Scanner(System.in);
+        System.out.println("Enter an arithmetic expression (with +, -, *, / and parentheses):");
+        String expression = in.nextLine().replaceAll(" ", "");
+
+        while (!isBalanced(expression)) {
+            System.out.println("Unbalanced parentheses detected.");
+            System.out.println("1. Add closing parenthesis ')' at end");
+            System.out.println("2. Add custom character at specific position");
+            int fixChoice = in.nextInt();
+            in.nextLine();
+
+            switch (fixChoice) {
+                case 1:
+                    expression += ")";
+                    break;
+					
+                case 2:
+                    System.out.print("Enter character to add: ");
+                    char c = in.nextLine().charAt(0);
+                    System.out.print("Enter position (0 to " + expression.length() + "): ");
+                    int pos = in.nextInt();
+                    in.nextLine();
+                    if (pos >= 0 && pos <= expression.length()) {
+                        expression = expression.substring(0, pos) + c + expression.substring(pos);
+                    } else {
+                        System.out.println("Invalid position.");
+                    }
+                    break;
+                default:
+                    System.out.println("Invalid choice.");
+            }
+        }
+
+        while (true) {
+            System.out.println("\nCurrent Expression: " + expression);
+            System.out.println("Choose an option:");
+            System.out.println("1. Evaluate Expression");
+            System.out.println("2. Modify Expression");
+            System.out.println("3. Rotate Expression");
+            System.out.println("4. Analyze Digits (Even/Odd/Sorted)");
+            System.out.println("5. Exit");
+
+            int choice = in.nextInt();
+            in.nextLine();
+
+            switch (choice) {
+                case 1:
+                    try {
+                        double result = evaluate(expression);
+                        System.out.println("Result: " + result);
+                    } catch (Exception e) {
+                        System.out.println("Invalid expression: " + e.getMessage());
+                    }
+                    break;
+                case 2:
+                    expression = modifyExpression(expression, in);
+                    break;
+                case 3:
+                    expression = rotateExpression(expression, in);
+                    break;
+                case 4:
+                    analyzeDigits(expression);
+                    break;
+                case 5:
+                    System.out.println("Exiting...");
+                    return;
+                default:
+                    System.out.println("Invalid choice!");
+            }
+        }
+    }
+
+    public static boolean isBalanced(String expr) {
+        int count = 0;
+        for (char c : expr.toCharArray()) {
+            if (c == '(') count++;
+            else if (c == ')') count--;
+            if (count < 0) return false;
+        }
+        return count == 0;
+    }
+
+    public static String modifyExpression(String expr, Scanner in) {
+        System.out.println("1. Add character");
+        System.out.println("2. Delete character");
+        System.out.println("3. Replace character");
+        int option = in.nextInt();
+        in.nextLine();
+
+        switch (option) {
+            case 1:
+                System.out.print("Enter character to add: ");
+                char addChar = in.nextLine().charAt(0);
+                System.out.print("Enter position (0 to " + expr.length() + "): ");
+                int posAdd = in.nextInt();
+                in.nextLine();
+                if (posAdd >= 0 && posAdd <= expr.length()) {
+                    expr = expr.substring(0, posAdd) + addChar + expr.substring(posAdd);
+                }
+                break;
+            case 2:
+                System.out.print("Enter position to delete (0 to " + (expr.length() - 1) + "): ");
+                int posDel = in.nextInt();
+                in.nextLine();
+                if (posDel >= 0 && posDel < expr.length()) {
+                    expr = expr.substring(0, posDel) + expr.substring(posDel + 1);
+                }
+                break;
+            case 3:
+                System.out.print("Enter position to replace: ");
+                int posRep = in.nextInt();
+                in.nextLine();
+                if (posRep >= 0 && posRep < expr.length()) {
+                    System.out.print("Enter new character: ");
+                    char newChar = in.nextLine().charAt(0);
+                    expr = expr.substring(0, posRep) + newChar + expr.substring(posRep + 1);
+                }
+                break;
+            default:
+                System.out.println("Invalid choice.");
+        }
+        return expr;
+    }
+
+    public static String rotateExpression(String expr, Scanner in) {
+        System.out.print("Enter number of rotations: ");
+        int k = in.nextInt();
+        System.out.print("Direction (L for left, R for right): ");
+        char dir = in.next().toUpperCase().charAt(0);
+        in.nextLine();
+
+        int len = expr.length();
+        k = k % len;
+
+        if (dir == 'L') {
+            expr = expr.substring(k) + expr.substring(0, k);
+        } else if (dir == 'R') {
+            expr = expr.substring(len - k) + expr.substring(0, len - k);
+        } else {
+            System.out.println("Invalid direction.");
+        }
+        return expr;
+    }
+
+    public static void analyzeDigits(String expr) {
+        Set<Integer> even = new HashSet<>();
+        Set<Integer> odd = new HashSet<>();
+        Set<Integer> all = new TreeSet<>();
+
+        for (char c : expr.toCharArray()) {
+            if (Character.isDigit(c)) {
+                int num = Character.getNumericValue(c);
+                all.add(num);
+                if (num % 2 == 0) even.add(num);
+                else odd.add(num);
+            }
+        }
+
+        System.out.println("Even digits: " + even);
+        System.out.println("Odd digits: " + odd);
+        System.out.println("Sorted digits: " + all);
+    }
+
+    public static double evaluate(String expr) {
+        Deque<Double> values = new ArrayDeque<>();
+        Deque<Character> ops = new ArrayDeque<>();
+        int i = 0;
+
+        while (i < expr.length()) {
+            char ch = expr.charAt(i);
+
+            if (Character.isDigit(ch) || ch == '.') {
+                StringBuilder sb = new StringBuilder();
+                while (i < expr.length() && (Character.isDigit(expr.charAt(i)) || expr.charAt(i) == '.')) {
+                    sb.append(expr.charAt(i));
+                    i++;
+                }
+                values.addLast(Double.parseDouble(sb.toString()));
+                continue;
+            } else if (ch == '(') {
+                ops.addLast(ch);
+            } else if (ch == ')') {
+                while (!ops.isEmpty() && ops.peekLast() != '(') {
+                    double b = values.removeLast();
+                    double a = values.removeLast();
+                    char op = ops.removeLast();
+                    values.addLast(applyOp(op, b, a));
+                }
+                if (!ops.isEmpty() && ops.peekLast() == '(') {
+                    ops.removeLast();
+                } else {
+                    throw new IllegalArgumentException("Mismatched parentheses");
+                }
+            } else if (isOperator(ch)) {
+                while (!ops.isEmpty() && precedence(ch) <= precedence(ops.peekLast())) {
+                    double b = values.removeLast();
+                    double a = values.removeLast();
+                    char op = ops.removeLast();
+                    values.addLast(applyOp(op, b, a));
+                }
+                ops.addLast(ch);
+            }
+
+            i++;
+        }
+
+        while (!ops.isEmpty()) {
+            double b = values.removeLast();
+            double a = values.removeLast();
+            char op = ops.removeLast();
+            values.addLast(applyOp(op, b, a));
+        }
+
+        return values.removeLast();
+    }
+
+    public static boolean isOperator(char op) {
+        return op == '+' || op == '-' || op == '*' || op == '/';
+    }
+
+    public static int precedence(char op) {
+        if (op == '+' || op == '-') return 1;
+        if (op == '*' || op == '/') return 2;
+        return 0;
+    }
+
+    public static double applyOp(char op, double b, double a) {
+        switch (op) {
+            case '+': return a + b;
+            case '-': return a - b;
+            case '*': return a * b;
+            case '/':
+                if (b == 0) throw new ArithmeticException("Division by zero");
+                return a / b;
+        }
+        return 0;
+    }
+}
