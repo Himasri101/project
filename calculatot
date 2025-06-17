@@ -1,0 +1,62 @@
+import java.util.Scanner;
+
+class CALCULATOR1 {
+    public static void main(String[] args) {
+        System.out.println("Menu\n+ : Addition\n- : Subtraction\n* : Multiplication\n/ : Division");
+        number();
+    }
+
+    static void number() {
+        Scanner in = new Scanner(System.in);
+
+        System.out.println("Enter a value:");
+        int a = in.nextInt();
+
+        System.out.println("Enter b value:");
+        int b = in.nextInt();
+
+        System.out.println("Enter operator (+, -, *, /):");
+        char ch = in.next().charAt(0);
+
+        try {
+            switch (ch) {
+                case '+':
+                    System.out.println("Result: " + (a + b));
+                    break;
+                case '-':
+                    System.out.println("Result: " + (a - b));
+                    break;
+                case '*':
+                    System.out.println("Result: " + (a * b));
+                    break;
+                case '/':
+                    if (b == 0) {
+                        throw new ArithmeticException("Division by zero is not allowed.");
+                    }
+                    System.out.println("Result: " + (a / b));
+                    break;
+                default:
+                    System.out.println("Invalid operator.");
+                    repeat();
+                    return;
+            }
+        } catch (ArithmeticException e) {
+            System.out.println(e.getMessage());
+            number(); // Retry
+            return;
+        }
+
+        repeat();
+    }
+
+    public static void repeat() {
+        Scanner in = new Scanner(System.in);
+        System.out.println("Do you want to perform another operation? 1: Yes, 2: No");
+        int h = in.nextInt();
+        if (h == 1) {
+            number();
+        } else {
+            System.out.println("Exiting...");
+        }
+    }
+}
